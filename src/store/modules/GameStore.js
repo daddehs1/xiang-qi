@@ -3,7 +3,7 @@ import router from '@/router'
 var shortID = require('shortid');
 
 import io from '@/socket.io.js'
-var socket = io('192.168.31.228');
+var socket = io('localhost');
 const API_URL = '/api/v1';
 
 const GameStore = {
