@@ -1,6 +1,10 @@
 .DS_Store
 node_modules
-/dist
+
+# Firestore Keys
+/api/firestore-adminsdk.json
+
+.env
 
 # local env files
 .env.local

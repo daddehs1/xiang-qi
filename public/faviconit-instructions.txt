@@ -1,29 +1,35 @@
-thanks for using faviconit!
-copy the files to your site and add this code inside the HTML <HEAD> tag:
+# Your App Config
+server {
+        server_name mandarhyme.com www.mandarhyme.com;
 
-	<!-- ****** faviconit.com favicons ****** -->
-	<link rel="shortcut icon" href="/favicon.ico">
-	<link rel="icon" sizes="16x16 32x32 64x64" href="/favicon.ico">
-	<link rel="icon" type="image/png" sizes="196x196" href="/favicon-192.png">
-	<link rel="icon" type="image/png" sizes="160x160" href="/favicon-160.png">
-	<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png">
-	<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
-	<link rel="apple-touch-icon" href="/favicon-57.png">
-	<link rel="apple-touch-icon" sizes="114x114" href="/favicon-114.png">
-	<link rel="apple-touch-icon" sizes="72x72" href="/favicon-72.png">
-	<link rel="apple-touch-icon" sizes="144x144" href="/favicon-144.png">
-	<link rel="apple-touch-icon" sizes="60x60" href="/favicon-60.png">
-	<link rel="apple-touch-icon" sizes="120x120" href="/favicon-120.png">
-	<link rel="apple-touch-icon" sizes="76x76" href="/favicon-76.png">
-	<link rel="apple-touch-icon" sizes="152x152" href="/favicon-152.png">
-	<link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
-	<meta name="msapplication-TileColor" content="#FFFFFF">
-	<meta name="msapplication-TileImage" content="/favicon-144.png">
-	<meta name="msapplication-config" content="/browserconfig.xml">
-	<!-- ****** faviconit.com favicons ****** -->
+        location / {
+                proxy_pass http://localhost:5000;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_cache_bypass $http_upgrade;
+        }
 
------BEGIN RSA PRIVATE KEY-----
-Proc-Type: 4,ENCRYPTED
-DEK-Info: AES-128-CBC,3FAED73D990FE3418BF001683A13CCB8
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/mandarhyme.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/mandarhyme.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+server {
+    if ($host = mandarhyme.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+        listen 80;
+        listen [::]:80;
+        server_name mandarhyme.com www.mandarhyme.com;
+    return 404; # managed by Certbot
+
+
+}
