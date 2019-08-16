@@ -1,9 +1,9 @@
 import axios from 'axios'
 import router from '@/router'
 var shortID = require('shortid');
+import io from 'socket.io-client';
 
-import io from '@/socket.io.js'
-var socket = io('localhost');
+var socket = io();
 const API_URL = '/api/v1';
 
 const GameStore = {
