@@ -29,7 +29,7 @@ app.get('*', function(req, res) {
 })
 
 // Create default port to serve the app on
-const port = process.env.PORT || 80
+const port = process.env.PORT || 5001
 server.listen(port)
 
 io.on('connection', function(socket) {
