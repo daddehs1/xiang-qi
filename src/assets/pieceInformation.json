@@ -1,0 +1,37 @@
+{
+  "1": {
+    "name": "Soldier (卒) or (兵)",
+    "description": "The Soldier is simliar to the Pawn in Chess",
+    "movement": ["Before crossing the river, can move forward one space", "After crossing the river, can move forward or to either side one space"]
+  },
+  "3": {
+    "name": "Cannon (砲) or (炮)",
+    "description": "The Cannon is simliar to a Rook in Chess but has the ability to jump pieces",
+    "movement": ["Can move any distance orthogonally without attacking or jumping", "Can capture a piece on its movement path if jumping over another piece, called a \"screen\"", "Can only jump over exactly one piece", "The \"screen\" piece can be either a friend or opponent piece"]
+  },
+  "5": {
+    "name": "Chariot (車) or (俥)",
+    "description": "The Chariot almost identical to the Rook in Chess",
+    "movement": ["Moves any distance orthogonally"]
+  },
+  "7": {
+    "name": "Horse (馬) or (傌)",
+    "description": "The Horse is simliar to the Knight in Chess but is more restricted in movement",
+    "movement": ["Moves orthogonally one space in any direction and then diagonally one space away from its original position", "Cannot jump over pieces and can be blocked in the orthogonal direction"]
+  },
+  "9": {
+    "name": "Elephant (象) or Minister (相)",
+    "description": "The Elephant is simliar to the Bishop in Chess but is much more restricted in movement",
+    "movement": ["Moves diagonally in any direction exactly two spaces", "Cannot jump over any pieces", "Cannot cross the river onto opponent's side"]
+  },
+  "11": {
+    "name": "Advisor (士) or (仕)",
+    "description": "The Advisor has no equivalent in Chess and is used to protect the King",
+    "movement": ["Moves diagonally one space in any direction within the 3x3 general's palace", "Possible movement is marked on the board by diaganol lines"]
+  },
+  "13": {
+    "name": "General (將) or Minister (帅)",
+    "description": "The General is simliar to the King in Chess but is more restricted in movement",
+    "movement": ["Moves orthogonoally one space within the 3x3 general's palace", "Can attack the opponent's general if they are the same column and no pieces block the path"]
+  }
+}

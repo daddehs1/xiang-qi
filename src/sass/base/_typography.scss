@@ -1,0 +1,66 @@
+body {
+  font-family: "Lato", sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+  color: $colorGreyDark3;
+  //padding: 3rem;
+}
+
+.headingPrimary {
+  color: white;
+  text-align: center;
+
+  &__main {
+    font-size: 5rem;
+    //line-height: 5rem;
+    font-weight: 100;
+  }
+
+  &__sub {
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: .15rem;
+  }
+}
+
+.u-primary-text {
+  font-size: 3rem;
+
+  .mq-mobile & {
+      font-size: 2.5rem;
+  }
+  .mq-tiny & {
+      font-size: 2rem;
+  }
+}
+
+.u-secondary-text {
+  font-size: 2.5rem;
+  .mq-mobile & {
+      font-size: 2rem;
+  }
+  .mq-tiny & {
+      font-size: 1.5rem;
+  }
+}
+
+.headingSecondary {
+  font-size: 3rem;
+  font-weight: 300;
+  color: $colorRed1;
+
+  &__text {
+    white-space: nowrap;
+  }
+}
+
+.headingTertiary {
+  font-size: 2rem;
+  font-weight: 400;
+}
+
+.headingQuartenary {
+  text-transform: capitalize;
+  font-size: 1.5rem;
+  font-weight: 400;
+}

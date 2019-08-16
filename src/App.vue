@@ -1,29 +1,37 @@
 <template>
-  <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
-  </div>
+<div id="app">
+  <xq-window-wrapper>
+    <router-view></router-view>
+  </xq-window-wrapper>
+</div>
 </template>
+
+<script>
+import xqWindowWrapper from '@/components/WindowWrapper.vue';
+import xqBoard from '@/components/Board.vue';
+
+export default {
+  components: {
+    xqWindowWrapper,
+    xqBoard
+  }
+}
+</script>
+
+<style lang="scss">
+@import "./sass/global.scss";
+</style>
 
 <style lang="scss">
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-#nav {
-  padding: 30px;
-  a {
-    font-weight: bold;
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
     color: #2c3e50;
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
+}
+
+#socket {
+    display: none;
 }
 </style>
