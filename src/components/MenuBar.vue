@@ -1,6 +1,7 @@
 <template>
 <!-- The game's menu bar -->
 <div>
+  <!-- Iterate over menu bar items to add to DOM -->
   <ul class="menu-bar" :style="styleObject">
     <template v-for="menuItem in activeMenuItems">
     <li class="menu-bar__item">

@@ -1,4 +1,5 @@
 <template>
+<!-- A piece which represents a potential move for a given piece -->
 <g @click="handleMoveMapClick" class="move-map-piece" :class="getClassObject">
   <circle class="move-map-piece__circle" r="4%" /></circle>
 </g>
@@ -11,6 +12,7 @@ import {
 
 export default {
   name: 'move-map-piece',
+  // invisible if not part of the tutorial
   props: ['pieceColor', 'r', 'c', 'invisible'],
   methods: {
     handleMoveMapClick() {

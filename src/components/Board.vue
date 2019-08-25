@@ -971,7 +971,7 @@ export default {
       clearInterval(this.animationInterval);
       this.animationIndex = 0;
       this.animationInterval = setInterval(this.animateBoardTick, 80, options);
-    }
+    },
     /**
      * Gets called from animateBoard
      * Represents one tick in the board select/deselect animation
