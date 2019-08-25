@@ -3,8 +3,8 @@
   <svg class="board__graphics" ref="graphics" xmlns="http://www.w3.org/2000/svg">
     <xq-board-art></xq-board-art>
 
-    <template v-if="!isTutorial && ghostPieces" v-for="ghost in ghostPieces">
-      <xq-ghost :style="getTranslatePieceStyleObject(ghost.row, ghost.col)" :color="ghost.pieceColor" :isOrigin="ghost.isOrigin" ref="ghost" />
+    <template v-if="!isTutorial && ghostPieces" v-for="(ghost, g) in ghostPieces">
+      <xq-ghost :key="g + '-' + keySuffix" :style="getTranslatePieceStyleObject(ghost.row, ghost.col)" :color="ghost.pieceColor" :isOrigin="ghost.isOrigin" ref="ghost" />
     </template>
 
 
@@ -14,7 +14,7 @@
           <xq-piece :key="r+ '-' + c + '-' + keySuffix" :r="r" :c="c"
                     :pieceType="pieceMatrix[r][c]"
                     :pieceCharacter= "characterArray[pieceMatrix[r][c]-1]"
-                    :style="getTranslatePieceStyleObject(r, c)"
+                    :style="getTranslatePieceStyleObject(r, c, true)"
                     :isTutorial="isTutorial"
                     ref="piece" />
         </template>
@@ -53,6 +53,8 @@ function getInitialData() {
   return {
     // dummy value used to simulate reactivity on window resize
     keySuffix: false,
+    // matrix of piece types as placed on the board
+    // initial state is loading message "LOADING GAME!"
     pieceMatrix: [
       [0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -65,8 +67,12 @@ function getInitialData() {
       [0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0],
     ],
+    // moves made on this board
     localMoves: [],
+    // zero or two "pieces" that represent the origin and destination of most recent move
     ghostPieces: [],
+    // location of the generals of each player
+    // used to determine check/checkmate status
     generalLocations: {
       0: {
         row: 0,
@@ -77,7 +83,11 @@ function getInitialData() {
         col: 4
       },
     },
+    // history of moves made
+    // used to undo moves in event of invalid move e.g. causing a check
+    // or to simulate movement during check for check / check for checkmate
     historyStack: [],
+    // used to run loading screen select/deselect animation
     animationIndex: 0,
     animationInterval: null
   }
@@ -99,9 +109,17 @@ export default {
   data: getInitialData,
   methods: {
     ...mapActions(['setInitialBoardMovesLoadedFlag', 'openMessageBox', 'setSelectedPiece', 'switchCurrentTurn', 'setCheckStatus', 'addCapturedPiece', 'pushMove']),
+    /**
+     * Gets called when the user clicks on "Reset Board" in tutorial view
+     * Resets board with pieces placed in initial position
+     */
     handleTutorialReset() {
       this.setBoard();
     },
+    /**
+     * Gets called when there is a route change (i.e. change in gameID) or when component first mounts
+     * Sets the board to initial state and runs first-load select/deselect animation
+     */
     initializeBoard() {
       if (this.isTutorial) {
         this.setBoard();
@@ -113,6 +131,10 @@ export default {
         });
       }
     },
+    /**
+     * Gets called from initializeBoard
+     * Resets component data to initial state
+     */
     resetBoardState() {
       // Fetch the initialState object locally, so we do not have to call the function again
       let initialData = getInitialData();
@@ -120,6 +142,10 @@ export default {
         this[prop] = initialData[prop];
       }
     },
+    /**
+     * Gets called from handleTutorialReset and initializeBoard
+     * Sets piece matrix to Xiangqi default piece positions
+     */
     setBoard() {
       Push.config({
         serviceWorker: '//serviceWorker.min.js'
@@ -138,17 +164,16 @@ export default {
         [5, 7, 9, 11, 13, 11, 9, 7, 5]
       ]
     },
-    getXShift(c) {
-      var fixedXShift = 50 / BOARD_WIDTH_SPACES;
-      var variableXShiftFactor = 100 / BOARD_WIDTH_SPACES;
-      var boardShouldReverse = this.playerColor == 0;
-      return fixedXShift + c * variableXShiftFactor;
-    },
-    getYShift(r) {
-      var fixedYShift = 50 / BOARD_HEIGHT_SPACES;
-      var variableYShiftFactor = 100 / BOARD_HEIGHT_SPACES;
-      return fixedYShift + r * variableYShiftFactor;
-    },
+    /**
+     * Gets called when board pieces are rendered in DOM
+     * Calculates the horizontal and vertical shift of a piece based on its column and row
+     * Reverses piece if player is Black so that they are still on the bottom of screen playing upwards
+     *
+     * @param {Number} r The row number of piece to calculate shift for
+     * @param {Number} c The column number of piece to calculate shift for
+     *
+     * @return {String} a string containing the inline style which handles shift of a piece
+     */
     getTranslatePieceStyleObject(r, c) {
       var boardShouldReverse = this.playerColor == 0 && this.gameHasLoaded;
       return boardShouldReverse ? {
@@ -157,36 +182,90 @@ export default {
         transform: 'translate(' + this.getXShift(c) + '%, ' + this.getYShift(r) + '%)'
       }
     },
+    /**
+     * Gets called from getTranslatePieceStyleObject
+     * Calculates the horizontal shift of a piece based on its column
+     *
+     * @param {Number} c The column number of piece to calculate shift for
+     *
+     * @return {Number} the percentage of horizontal shift for this column
+     */
+    getXShift(c) {
+      var fixedXShift = 50 / BOARD_WIDTH_SPACES;
+      var variableXShiftFactor = 100 / BOARD_WIDTH_SPACES;
+      return fixedXShift + c * variableXShiftFactor;
+    },
+    /**
+     * Gets called from getTranslatePieceStyleObject
+     * Calculates the vertical shift of a piece based on its row
+     *
+     * @param {Number} r The row number of piece to calculate shift for
+     *
+     * @return {Number} the percentage of vertical shift for this row
+     */
+    getYShift(r) {
+      var fixedYShift = 50 / BOARD_HEIGHT_SPACES;
+      var variableYShiftFactor = 100 / BOARD_HEIGHT_SPACES;
+      return fixedYShift + r * variableYShiftFactor;
+    },
+    /**
+     * Gets called when window resi
+     * toggles keySuffix to trigger reactivty and rerender pieces on window resize
+     */
     toggleKeySuffix() {
       // "key-change method" to force component to
       // workaround to allow pieces to reposition themselves on window resize (as window is not reactive)
       this.keySuffix = !this.keySuffix;
     },
+    /**
+     * Gets called when window resizes
+     */
     handleWindowResize() {
       this.toggleKeySuffix();
     },
+
+    //
     // GAME LOGIC
+    //
+
+    /**
+     * Gets called from MovableMapPiece component via EventBus
+     * Gets called when player has selected pieces and clicks on a MovableMapPiece to request to move
+     * Handles request to move a piece
+     *
+     * @param {Object} payload the target row and column of the requested move
+     */
     handleMoveMade(payload) {
       this.attemptMovePiece(this.selectedPiece, payload.row, payload.col);
-      //this.movePiece(this.selectedPiece, payload.row, payload.col);
     },
+    /**
+     * Gets called from handleMoveMade and resolveMoveDeltas
+     * Attempts to move a piece and reverses move if invalid (i.e if it would cause or fail to clear a check on player)
+     *
+     * @param {Object} piece information about the type and origin of piece attempting to be moved
+     * @param {Number} targetRow target row of attempted move
+     * @param {Number} targetCol target column of attempted move
+     * @param {Boolean} isSimulation whether piece is not being moved by player but just to resolve move deltas
+     *
+     * @return {Boolean} whether or not move was made successfully
+     */
     attemptMovePiece(piece, targetRow, targetCol, isSimulation) {
       var pieceColor = piece.pieceType % 2;
       var opponentPieceColor = (piece.pieceType + 1) % 2;
 
+      // record target piece type to add to captured pieces if move accepted
       var targetPieceType = this.pieceMatrix[targetRow][targetCol];
       this.movePieceWithHistory(piece, targetRow, targetCol);
 
       // disallow move if the move will result in a check against moving player
-
       if (this.checkForCheck(pieceColor)) {
         this.undoMove();
         return false;
       }
 
-      // Move is Accepted
+      // From this point move is Accepted
 
-      // place ghost in previous location
+      // place ghost pieces in previous location
       var ghostOrigin = {
         row: piece.row,
         col: piece.col,
@@ -201,17 +280,22 @@ export default {
       }
       this.ghostPieces = [ghostOrigin, ghostTarget];
 
+      // if not tutorial, add target piece to captured pieces
       if (!this.isTutorial) {
+        // only add if target piece exists (i.e. target was not a blank space aka a 0 on the board)
         if (targetPieceType) {
           this.addCapturedPiece({
             pieceType: targetPieceType
           });
         }
 
+        // check if this move has caused a check against opponent player
         if (this.checkForCheck(opponentPieceColor)) {
+          // if check, check if this move has caused a checkmate against opponent player
           this.checkForCheckmate(opponentPieceColor);
         }
 
+        // if this is not a simulated move, push it to the local moves and to server
         var moveString = this.encodeMoveString(piece.row, piece.col, targetRow, targetCol);
         this.localMoves.push(moveString);
         if (!isSimulation) {
@@ -221,19 +305,40 @@ export default {
         }
       }
 
+      // deselect piece
       this.setSelectedPiece({
         row: -1,
         col: -1,
         pieceType: 0
       });
+
+      // switch to opponent turn
       this.switchCurrentTurn();
       return true;
 
     },
+    /**
+     * Gets called from attemptMovePiece
+     * Encodes a move into a 4-character move string
+     *
+     * @param {Number} originRow origin row of move to be encoded
+     * @param {Number} originCol origin col of move to be encoded
+     * @param {Number} targetRow target row of move to be encoded
+     * @param {Boolean} targetCol target col of move to be encoded
+     *
+     * @return {String} the encoded move string
+     */
     encodeMoveString(originRow, originCol, targetRow, targetCol) {
       var letters = "ABCDEFGHIJ"
       return letters[originRow] + originCol + letters[targetRow] + targetCol;
     },
+    /**
+     * Gets called from resolveMoveDeltas
+     * Decodes a move from a 4-character move string
+     *
+     * @param {String} moveString 4-character string which encodes information about origin and target of a move
+     * @return {Object} decoded information about the move
+     */
     decodeMoveString(moveString) {
       var letters = "ABCDEFGHIJ"
       return {
@@ -243,14 +348,46 @@ export default {
         targetCol: parseInt(moveString[3])
       }
     },
+    /**
+     * Gets called from attemptMovePiece and checkForcheck
+     * Wrapper function for movePiece which records the history of the move
+     *
+     * @param {Object} piece information about the type and origin of piece being moved
+     * @param {Number} targetRow target row of move being made
+     * @param {Number} targetCol target column of move being made
+     */
+    movePieceWithHistory(piece, targetRow, targetCol) {
+      var historyEvent = {
+        checkStatus: this.checkStatus,
+        originRow: piece.row,
+        originCol: piece.col,
+        originPieceType: piece.pieceType,
+        targetRow,
+        targetCol,
+        targetPieceType: this.pieceMatrix[targetRow][targetCol],
+        generalLocations: Object.assign({}, this.generalLocations)
+      }
+      this.movePiece(piece, targetRow, targetCol);
+      this.pushEventToHistoryStack(historyEvent)
+    },
+    /**
+     * Gets called from movePieceWithHistory
+     * Handles the actual movement of a piece
+     *
+     * @param {Object} piece information about the type and origin of piece being moved
+     * @param {Number} targetRow target row of move being made
+     * @param {Number} targetCol target column of move being made
+     */
     movePiece(piece, targetRow, targetCol) {
       var originRow = piece.row;
       var originCol = piece.col;
       var originPieceType = piece.pieceType;
 
+      // updates pieceMatrix to reflect new move
       this.setPieceMatrixCell(targetRow, targetCol, originPieceType);
       this.setPieceMatrixCell(originRow, originCol, 0);
 
+      // if piece that has been moved is a general, update generalLocations
       if (originPieceType == 13 || originPieceType == 14) {
         var pieceColor = originPieceType % 2;
         var newGeneralLocation = {
@@ -261,26 +398,31 @@ export default {
       }
 
     },
-    movePieceWithHistory(piece, row, col) {
-      var historyEvent = {
-        checkStatus: this.checkStatus,
-        originRow: piece.row,
-        originCol: piece.col,
-        originPieceType: piece.pieceType,
-        targetRow: row,
-        targetCol: col,
-        targetPieceType: this.pieceMatrix[row][col],
-        generalLocations: Object.assign({}, this.generalLocations)
-      }
-      this.movePiece(piece, row, col);
-      this.pushEventToHistoryStack(historyEvent)
-    },
+    /**
+     * Gets called from movePieceWithHistory
+     * Pushes a history event to the stack in case of a needed removal
+     *
+     * @param {Object} historyEvent information about the move to push
+     */
     pushEventToHistoryStack(historyEvent) {
       this.historyStack.push(historyEvent);
     },
+    /**
+     * Gets called from undoMove
+     * Pops a history event to the stack in case of a needed removal
+     *
+     * @param {Object} historyEvent information about a move
+     *
+     * @return {Object} information about the popped move
+     */
     popEventFromHistoryStack() {
       return this.historyStack.pop();
     },
+    /**
+     * Gets called from attemptMovePiece and checkForCheckmate
+     * Restores the previous board/game state from the history stack
+     *
+     */
     undoMove() {
       var historyEvent = this.popEventFromHistoryStack();
       this.setCheckStatus(historyEvent.checkStatus);
@@ -288,11 +430,28 @@ export default {
       this.setPieceMatrixCell(historyEvent.targetRow, historyEvent.targetCol, historyEvent.targetPieceType);
       this.generalLocations = Object.assign({}, historyEvent.generalLocations);
     },
+    /**
+     * Gets called from movePiece and undoMove
+     * Sets a cell in the pieceMatrix to a given pieceType
+     *
+     * @param {Number} row row of pieceMatrix to update
+     * @param {Number} col column of pieceMatrix to update
+     * @param {Number} pieceType piece type to set cell to
+     */
     setPieceMatrixCell(row, col, pieceType) {
       this.$set(this.pieceMatrix[row], col, pieceType);
     },
+    /**
+     * Gets called from attemptMovePiece and checkForCheckMate
+     * Checks to see if a given player is in check
+     *
+     * @param {Number} playerColorToCheck color of player being checked for check
+     *
+     * @return {Boolean} whether or not given player is in check
+     */
     checkForCheck(playerColorToCheck) {
       var targetGeneralLocation = this.generalLocations[playerColorToCheck];
+      // iterate through every piece on the board
       for (var r = 0; r < this.pieceMatrix.length; r++) {
         for (var c = 0; c < this.pieceMatrix[0].length; c++) {
           var pieceType = this.pieceMatrix[r][c];
@@ -304,18 +463,32 @@ export default {
               col: c,
               pieceType: this.pieceMatrix[r][c]
             }
+            // get currentMovableMap for the current piece
             var currentMovableMap = this.getMovableMapByPiece(currentPiece);
+            // if movableMap contains the target general, player is under check
             if (currentMovableMap[targetGeneralLocation.row][targetGeneralLocation.col] == 1) {
+              // set check status
               this.setCheckStatus(1);
               return true;
             }
           }
         }
       }
+      // if we have iterated over the board and haven't returned true for check, we are not in check
+      // set check status
       this.setCheckStatus(0);
       return false;
     },
+    /**
+     * Gets called from attemptMpvePiece
+     * Checks to see whether the given player is under checkmate
+     *
+     * @param {Number} playerColorToCheck color of player being checked for checkmate
+     *
+     * @return {Boolean} whether or not given player is in checkmate
+     */
     checkForCheckmate(playerColorToCheck) {
+      // iterate over every piece
       for (var r = 0; r < this.pieceMatrix.length; r++) {
         for (var c = 0; c < this.pieceMatrix[0].length; c++) {
           var pieceType = this.pieceMatrix[r][c];
@@ -326,13 +499,19 @@ export default {
               col: c,
               pieceType: pieceType
             }
+            // get movableMap for current piece
             var currentMovableMap = this.getMovableMapByPiece(currentPiece)
+            // iterate over all possible moves
             for (var moveRow = 0; moveRow < currentMovableMap.length; moveRow++) {
               for (var moveCol = 0; moveCol < currentMovableMap[0].length; moveCol++) {
                 if (currentMovableMap[moveRow][moveCol] == 1) {
+                  // make a poetential move to avaialable space on movableMap
                   this.movePieceWithHistory(currentPiece, moveRow, moveCol);
+                  // check to see if this potential move has cleared the check
                   var isStillCheck = this.checkForCheck(playerColorToCheck);
+                  // restore the board the original state
                   this.undoMove();
+                  // if check has been cleared by this potential move,
                   if (!isStillCheck) {
                     return false;
                   }
@@ -342,9 +521,20 @@ export default {
           }
         }
       }
+      // if we have iterated over every friendly piece and not found a way to clear check
+      // then player is under checkmate
+      // update check status
       this.setCheckStatus(2);
       return true;
     },
+    /**
+     * Gets called from attemptMpvePiece
+     * Creates a matrix which represents all possible moves on the board for a piece
+     *
+     * @param {Object} piece information about the piece that moves are being found for
+     *
+     * @return {Number[][]} a matrix representing the board where 1 indicates a movable position and 0 a non-movable position
+     */
     getMovableMapByPiece(piece) {
       var moveMap = [];
       //create empty map
@@ -359,6 +549,7 @@ export default {
       let c = sp.col;
       let selectedPieceType = sp.pieceType;
 
+      // switch over piece type to determine appropriate move-finding logic for given piece
       switch (selectedPieceType) {
         case 1: //Advisor (red)
           //check which side of river we are on
@@ -507,8 +698,8 @@ export default {
           // check upwards
           // make sure potential space is not across river
           if (r - 2 >= 5) {
-            // make sure adjacent diagnol is empty first before checking second adjacent diagnol
-            // this is 'elphant can't jump pieces' rule
+            // make sure adjacent diaganol is empty first before checking second adjacent diagnol
+            // this is 'elephant can't jump pieces' rule
             if (this.checkSpaceEmpty(r - 1, c - 1))
               this.attemptMoveMapAdd(r - 2, c - 2, moveMap, piece);
             if (this.checkSpaceEmpty(r - 1, c + 1))
@@ -614,16 +805,47 @@ export default {
       }
       return moveMap;
     },
+    /**
+     * Gets called from getMovableMapByPiece
+     * Adds a move to the move map
+     *
+     * @param {Number} row row of move
+     * @param {Number} col column of move
+     * @param {Number[][]} moveMap map of moves that move is being added to
+     *
+     * @return {moveMap} returns the move map passed in
+     */
     moveMapAdd(row, col, moveMap) {
       return moveMap[row][col] = 1;
     },
+    /**
+     * Gets called from getMovableMapByPiece
+     * Adds a move to the move map after if move clears additional checks
+     *
+     * @param {Number} row row of move
+     * @param {Number} col column of move
+     * @param {Number[][]} moveMap map of moves that move is being added to
+     *
+     * @return {moveMap} returns the move map passed in
+     */
     attemptMoveMapAdd(row, col, moveMap, piece) {
       if (this.checkSpaceEmptyOrEnemy(row, col, piece)) {
         return moveMap[row][col] = 1;
       }
       return moveMap;
     },
+    /**
+     * Gets called from attemptMoveMapAdd
+     * Checks to see if a given space on the board is either empty or contains an enemy
+     *
+     * @param {Number} row row of space
+     * @param {Number} col column of space
+     * @param {Object} piece contains information about the piece to determine enemy status
+     *
+     * @return {Boolean} whether or not the space is empty of contains an enemy piece
+     */
     checkSpaceEmptyOrEnemy(row, col, piece) {
+      // first check if given space is in bounds of the board/pieceMatrix
       var inBounds = this.checkSpaceInBounds(row, col);
       if (inBounds) {
         var isEmpty = this.checkSpaceEmpty(row, col);
@@ -634,41 +856,62 @@ export default {
       }
       return false;
     },
-    checkSpaceInBounds(row, col) {
-      return row >= 0 && row <= 9 && col >= 0 && col <= 8;
-    },
+    /**
+     * Gets called from attemptMoveMapAdd and checkSpaceEmptyOrEnemy
+     * Checks to see if a given space on the board is empty
+     *
+     * @param {Number} row row of space
+     * @param {Number} col column of space
+     *
+     * @return {Boolean} whether or not the space is empty
+     */
     checkSpaceEmpty(row, col) {
       return this.checkSpaceInBounds(row, col) && (this.pieceMatrix[row][col] == 0);
     },
+    /**
+     * Gets called from checkSpaceEmptyOrEnemy and checkSpaceEmpty
+     * Checks to see if a given space on the board is in bounds
+     *
+     * @param {Number} row row of space
+     * @param {Number} col column of space
+     *
+     * @return {Boolean} whether or not the space is in bounds
+     */
+    checkSpaceInBounds(row, col) {
+      return row >= 0 && row <= 9 && col >= 0 && col <= 8;
+    },
+    /**
+     * Gets called from attemptMoveMapAdd
+     * Checks to see if a given space on the board is in the red palace
+     *
+     * @param {Number} row row of space
+     * @param {Number} col column of space
+     *
+     * @return {Boolean} whether or not the space is in red palace
+     */
     checkInsidePalaceRed(row, col) {
       return row >= 7 && row <= 9 && col >= 3 && col <= 5;
     },
+    /**
+     * Gets called from attemptMoveMapAdd
+     * Checks to see if a given space on the board is in the black palace
+     *
+     * @param {Number} row row of space
+     * @param {Number} col column of space
+     *
+     * @return {Boolean} whether or not the space is in black palace
+     */
     checkInsidePalaceBlack(row, col) {
       return row >= 0 && row <= 2 && col >= 3 && col <= 5;
     },
-    animateBoardTick(options) {
-      // set default options
-      options = options || {
-        loopAnimation: false
-      };
-      this.$refs['piece'].forEach(piece => {
-        if (piece.r + piece.c == this.animationIndex) {
-          piece.$el.classList.add("piece--selected");
-          setTimeout(() => {
-            piece.$el.classList.remove("piece--selected")
-          }, 400)
-        }
-      })
-      this.animationIndex++;
-      if (this.animationIndex > 25) {
-        this.animationIndex = 0;
-        if (!options.loopAnimation) {
-          clearInterval(this.animationInterval);
-          this.finalizeBoardInitialization();
-        }
-      }
-    },
+    /**
+     * Gets called from watcher: moves
+     * Makes sure local board reflects moves from store
+     *
+     * @param {Object[]} moveDeltas array of moves which represents the difference between board state and store moves
+     */
     resolveMoveDeltas(moveDeltas) {
+      // iterate over move deltas
       moveDeltas.forEach(move => {
         var moveInfo = this.decodeMoveString(move.moveString);
         var row = moveInfo.originRow;
@@ -680,21 +923,14 @@ export default {
           col,
           pieceType
         }
+        // attempt to move the piece as simulation (i.e. do not push this move out)
         this.attemptMovePiece(piece, moveInfo.targetRow, moveInfo.targetCol, true);
       })
     },
-    animateBoard(options) {
-      clearInterval(this.animationInterval);
-      this.animationIndex = 0;
-      this.animationInterval = setInterval(this.animateBoardTick, 80, options);
-    },
-    openWelcomeMessageBox() {
-      this.messageBoxPromise('game-information').then(() => {
-        this.openMessageBox({
-          target: 'game-information'
-        })
-      });
-    },
+    /**
+     * Gets called from animateBoardTick
+     * Handles the finalization of the board being set (i.e. after the initial piece select/deselct animation)
+     */
     finalizeBoardInitialization() {
       if (!this.isTutorial) {
         if (this.$route.params.isNewGame) {
@@ -707,10 +943,74 @@ export default {
           }
         });
       }
+    },
+
+    //
+    // UI LOGIC
+    //
+
+    /**
+     * Gets called from finalizeBoardInitialization
+     * Opens the welcome message box
+     */
+    openWelcomeMessageBox() {
+      this.messageBoxPromise('game-information').then(() => {
+        this.openMessageBox({
+          target: 'game-information'
+        })
+      });
+    },
+    /**
+     * Gets called from initializeBoard watcher: gameHasLoaded
+     * Initiates the select/deselect animation
+     *
+     * @param {Object} options options about this animation
+     */
+    animateBoard(options) {
+      // remove any previous animation intervals
+      clearInterval(this.animationInterval);
+      this.animationIndex = 0;
+      this.animationInterval = setInterval(this.animateBoardTick, 80, options);
+    }
+    /**
+     * Gets called from animateBoard
+     * Represents one tick in the board select/deselect animation
+     *
+     * @param {Object} options options about this animation
+     */
+    animateBoardTick(options) {
+      // set default options
+      options = options || {
+        loopAnimation: false
+      };
+      // iterate over every piece
+      this.$refs['piece'].forEach(piece => {
+        // determine if this piece should be selected in a diaganol fashion
+        if (piece.r + piece.c == this.animationIndex) {
+          piece.$el.classList.add("piece--selected");
+          setTimeout(() => {
+            piece.$el.classList.remove("piece--selected")
+          }, 400)
+        }
+      })
+      // increase the animation index
+      this.animationIndex++;
+      // if over the animation limit, reset
+      if (this.animationIndex > 25) {
+        this.animationIndex = 0;
+        // if this animation is non-looping, do not restart
+        if (!options.loopAnimation) {
+          clearInterval(this.animationInterval);
+          this.finalizeBoardInitialization();
+        }
+      }
     }
   },
   computed: {
     ...mapGetters(['initialBoardMovesLoadedFlag', 'messageBoxPromise', 'gameHasLoaded', 'characterArray', 'selectedPiece', 'currentTurn', 'playerColor', 'checkStatus', 'currentGameID', 'moves']),
+    /**
+     * Gets called from Board rendering
+     */
     classObject() {
       return {
         "board--piece-selected": this.selectedPiece.row != -1
@@ -729,7 +1029,7 @@ export default {
   },
   watch: {
     currentTurn(newCurrentTurn, oldCurrentTurn) {
-      console.log(oldCurrentTurn)
+      // send push notification on current move change
       if (newCurrentTurn == this.playerColor && oldCurrentTurn !== null) {
         Push.create("Your Turn!", {
           icon: '/favicon-120.png',
@@ -740,11 +1040,12 @@ export default {
         });
       }
     },
+    // initialize board if route change (i.e. if the gameID has changed)
     $route() {
       this.initializeBoard();
     },
+    // handle game having loaded from store
     gameHasLoaded(gameHasLoadedNewValue) {
-      console.log("the game has loaded");
       if (gameHasLoadedNewValue) {
         this.setBoard();
         this.animateBoard();
@@ -753,17 +1054,19 @@ export default {
         }
       }
     },
+    // watch to see if any moves have come in from the store
     moves(newMoves) {
       if (newMoves && newMoves.length) {
+        // create move deltas as any moves from the store that are not present in local moves
         var moveDeltas = newMoves.filter((move, index) => move.moveString != this.localMoves[index]);
         this.resolveMoveDeltas(moveDeltas);
-        console.log("the moves have been updated");
         if (!this.initialBoardMovesLoadedFlag) {
           this.setInitialBoardMovesLoadedFlag();
         }
       }
     },
   },
+  // handle initial setting up and taking down of event listeners
   mounted() {
     this.initializeBoard();
     EventBus.$on('tutorial-reset', this.handleTutorialReset);
@@ -771,6 +1074,7 @@ export default {
     EventBus.$on('move-made', this.handleMoveMade);
   },
   destroyed() {
+    EventBus.$off('tutorial-reset', this.handleTutorialReset);
     EventBus.$off('window-resized', this.handleWindowResize);
     EventBus.$off('move-made', this.handleMoveMade);
   }

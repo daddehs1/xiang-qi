@@ -104,6 +104,11 @@ const GameStore = {
     }) {
       commit('setInitialBoardMovesLoadedFlag');
     },
+
+    /**
+     * Gets called from Game component
+     * Loads information about a game from the server and updates store
+     */
     async loadGame({
       state,
       dispatch
@@ -134,10 +139,12 @@ const GameStore = {
         state.currentGameID = gameInfo.gameID;
         state.games = Object.assign({}, state.games)
 
+        // sets up socket to listen to any changes in this game
         socket.emit('clientListenGame', {
           gameID: gameInfo.gameID
         })
 
+        // handles any changes in this game
         socket.on('serverUpdateGame', ({
           moves
         }) => {
@@ -170,15 +177,23 @@ const GameStore = {
       commit('setMenuType', menuType)
     },
 
+    /**
+     * Gets called from MenuBar component
+     * Creates a new game and pushes game to the server
+     */
+
     async newGame({
       commit,
       state,
     }) {
+      // reset the game state in store
       commit('resetGameState');
+      // generate random ids for players and game
       var gameID = shortID.generate();
       var blackID = shortID.generate();
       var redID = shortID.generate();
 
+      // navigate page to game with playerID set to redID (red is default player)
       router.push({
         name: 'game',
         params: {
@@ -193,6 +208,7 @@ const GameStore = {
         redID
       };
 
+      // post game to server
       await axios.post(`${API_URL}/game`, params);
       var loadedGame = {
         currentTurn: 1,
@@ -212,21 +228,37 @@ const GameStore = {
       state.currentGameID = gameID;
       state.games = Object.assign({}, state.games)
       state.gameHasLoaded = true;
-      //state.initialBoardMovesLoadedFlag = true;
     },
 
+    /**
+     * Gets called from Board component
+     * Sets the check status
+     *
+     * @param {Object} payload the check status
+     */
     setCheckStatus({
       commit
     }, payload) {
       commit('setCheckStatus', payload);
     },
 
+    /**
+     * Gets called from Board component
+     * Switches current turn
+     */
     switchCurrentTurn({
       commit
     }) {
       commit('switchCurrentTurn');
     },
 
+    /**
+     * Gets called from Board component
+     * Pushes information about a move made to the server via socket
+     *
+     * @param {Object} payload contains information about the move being pushed
+     * @param {Number} col column of space
+     */
     pushMove({
       state
     }, payload) {

@@ -1,4 +1,5 @@
 <template>
+<!-- Container for game information in the tutoral view -->
 <div class="tutorial-info">
   <div class="tutorial-info__title">
     Piece Information

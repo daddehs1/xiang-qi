@@ -1,23 +1,29 @@
 <template>
+<!-- The Header for the game -->
 <div class="head-bar" :class="classObject">
+  <!-- Game Logo -->
   <div class="head-bar__logo">
     <xq-logo :colorInverted="!this.menuIsOpen" />
   </div>
 
+  <!-- Game Title -->
   <div class="head-bar__title">
     xiangqi
   </div>
 
+  <!-- Slot for the Game Status if not mobile-->
   <mq-layout mq="tablet+" class="head-bar__status-bar">
     <slot></slot>
   </mq-layout>
 
+  <!-- Menu Button -->
   <div v-if="!this.isHomePage" class="head-bar__menu">
     <div @click="toggleMenu" class="menu-icon">
       <div class="menu-icon__line"></div>
     </div>
   </div>
 
+  <!-- Menu -->
   <div class="head-bar__menu-screen">
     <xq-menu-bar/>
   </div>
@@ -41,11 +47,16 @@ export default {
     }
   },
   methods: {
+    /**
+     * Gets called when user clicks menu button
+     * Toggles menu open/closed
+     */
     toggleMenu() {
       this.menuIsOpen = !this.menuIsOpen;
     }
   },
   watch: {
+    // close the menu bar if we navigate to new page
     $route() {
       this.menuIsOpen = false;
     }
@@ -61,6 +72,7 @@ export default {
     }
   },
   created() {
+    // if home page, menu bar is open initially
     if (this.isHomePage) {
       this.menuIsOpen = true;
     }

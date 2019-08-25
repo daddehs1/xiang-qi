@@ -1,4 +1,5 @@
 <template>
+<!-- Footer for the menu, containing creater information -->
 <div class="foot-bar">
   <span class="foot-bar__text">Made by
     <span class="foot-bar__name"><a class="u-link-external" target="_blank" href="https://github.com/daddehs1">daddehs1</a></span>

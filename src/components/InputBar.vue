@@ -1,4 +1,5 @@
 <template>
+<!-- Input Bar for user inputs -->
 <input :name="this.name" maxlength="10" class="input-bar"></input>
 </template>
 

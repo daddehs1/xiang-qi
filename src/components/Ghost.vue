@@ -1,4 +1,5 @@
 <template>
+<!-- Ghost Piece which represents the origin and target of the most recent move with circles-->
 <g class="ghost">
   <circle class="ghost__circle" cx="0" cy="0" r="4.5%" :class="getClassObject" /></circle>
 </g>
@@ -11,6 +12,7 @@ import {
 } from 'vuex';
 
 export default {
+  // isOrigin determines whether this circle is the empty circle where most recently moved piece was before
   props: ['color', 'isOrigin'],
   methods: {},
   computed: {

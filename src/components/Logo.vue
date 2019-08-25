@@ -1,4 +1,5 @@
 <template>
+<!-- The game logo -->
 <div class="logo" :class="classObject">
   <svg class="logo__svg">
         <circle class="logo__circle" cx="50%" cy="50%">

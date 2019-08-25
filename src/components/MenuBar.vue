@@ -1,4 +1,5 @@
 <template>
+<!-- The game's menu bar -->
 <div>
   <ul class="menu-bar" :style="styleObject">
     <template v-for="menuItem in activeMenuItems">

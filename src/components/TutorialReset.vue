@@ -1,4 +1,5 @@
 <template>
+<!-- Reset button to reset board to initial state for tutorial view -->
 <div class="tutorial-reset">
   <span @click="reset" class="tutorial-reset__link">Reset Board</span>
 </div>
@@ -12,6 +13,10 @@ import {
 export default {
   name: 'tutorial-reset',
   methods: {
+    /**
+     * Gets called when tutorial reset is clicked
+     * Emits reset event to board via EventBus
+     */
     reset() {
       EventBus.$emit('tutorial-reset');
     }

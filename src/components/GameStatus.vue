@@ -1,11 +1,15 @@
 <template>
+<!-- UI element that displays the status of the game -->
 <div class="game-status" :class="classObject">
   <div class="game-status__turn-info">
+    <!-- Check Status -->
     <div class="game-status__item ">{{this.checkStatusString}}</div>
     <div class="game-status__divider ">•</div>
+    <!-- Turn Status -->
     <div class="game-status__item game-status__item--turn">{{this.turnString}}</div>
   </div>
   <div class="game-status__player-info">
+    <!-- Player Color -->
     <span class="game-status__player-message"> {{playerColorString}} </span>
   </div>
 </div>
@@ -38,6 +42,7 @@ export default {
     playerColorString() {
       return "You are " + (this.playerColor == 0 ? "Black" : "Red");
     },
+    // returns current turn, or displays winner in event of checkmate
     turnString() {
       var turnStr;
       if (this.checkStatus == 2) {

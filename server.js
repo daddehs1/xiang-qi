@@ -68,16 +68,6 @@ io.on('connection', function(socket) {
     socket.emit('serverLoadGame', gameInfo)
   });
 
-  // socket.on('game-subscribed', function(payload) {
-  //   var callback = (moves) => {
-  //     socket.emit('game-updated', {
-  //       moves
-  //     });
-  //   }
-  //   firestore.listenToGame(payload.gameID, callback);
-  //
-  // });
-
   socket.on('move-made', function(payload) {
     firestore.pushMoveToGame(payload.gameID, payload.moveString);
   });

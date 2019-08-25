@@ -7,6 +7,15 @@ module.exports = {
     }
   },
   devServer: {
-    proxy: 'http://localhost:80',
+    proxy: {
+      "/api": {
+        target: 'http://localhost:5001',
+        changeOrigin: true
+      },
+      "/socket.io": {
+        target: 'http://localhost:5001',
+        changeOrigin: true
+      }
+    }
   }
 }

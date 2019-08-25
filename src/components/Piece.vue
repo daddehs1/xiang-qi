@@ -1,4 +1,5 @@
 <template>
+<!-- A xiangqi piece on the board -->
 <g @click="attemptSelect" class="piece" :class="getClassObject">
   <circle class="piece__circle piece__circle--outer" cx="0" cy="0" r="4%" stroke-width="1" fill="white" /></circle>
   <circle class="piece__circle piece__circle--inner" cx="0" cy="0" r="3.4%" stroke-width="1" fill="white" /></circle>
@@ -16,7 +17,12 @@ export default {
   props: ['r', 'c', 'pieceType', 'pieceCharacter', 'isTutorial'],
   methods: {
     ...mapActions(['setSelectedPiece']),
+    /**
+     * Gets called when Piece is clicked
+     * Attempts to select a piece for the current player
+     */
     attemptSelect() {
+      // only can select if 1. is a tutorial OR 2. player is selected own piece during own turn
       if (this.isTutorial || (this.currentTurn == this.pieceColor && this.currentTurn == this.playerColor)) {
         this.setSelectedPiece({
           row: this.r,

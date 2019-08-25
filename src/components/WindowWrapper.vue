@@ -1,4 +1,5 @@
 <template>
+<!-- Wrapper for the window which allows board and piece to adjust on window resize -->
 <div class="window-wrapper" :class="classObject" :style="styleObject">
   <xq-message-box-container />
   <slot></slot>
@@ -23,6 +24,10 @@ export default {
   },
   methods: {
     ...mapActions(['setWindowHeight', 'setWindowWidth']),
+    /**
+     * Gets called when user resizes window
+     * Calculates new height and width units based on new window size
+     */
     handleWindowResize() {
       // publish information for any subscribers
       EventBus.$emit('window-resized');
